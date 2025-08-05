@@ -1,8 +1,6 @@
 import os
 import sys
 
-from app.core.config import settings
-from app.db.database import Base
 
 sys.path.append(os.path.join(sys.path[0], "app"))
 
@@ -11,8 +9,12 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-
 from alembic import context
+
+from app.core.config import settings
+from app.db.database import Base
+from app.db.models import User, Task, UserTask
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

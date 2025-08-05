@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     DB_HOST: str
     DB_PORT: str
     DB_NAME: str
+    DEBUG: bool
 
     @property
     def DATABASE_URL(self):
