@@ -19,10 +19,10 @@ async def read_users(session: AsyncSession = Depends(get_session)):
 @users_router.get("/{user_id}/")
 async def read_user(user_id: int, session: AsyncSession = Depends(get_session)):
     user_repo = UserRepository(session)
-    return user_repo.find_one(user_id)
+    return await user_repo.find_one(user_id)
 
 
-@users_router.post("/{user_id}/")
+@users_router.post("/")
 async def create_user(user: UserIn, session: AsyncSession = Depends(get_session)):
     user_repo = UserRepository(session)
     return await user_repo.add_one(user.model_dump())
