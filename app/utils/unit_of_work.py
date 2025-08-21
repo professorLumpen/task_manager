@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+from app.db.database import async_session_maker
 from app.repositories.task_repository import TaskRepository
 from app.repositories.user_repository import UserRepository
 
@@ -30,7 +31,7 @@ class UnitOfWork(IUnitOfWork):
         self.session_maker = session_maker
 
     async def __aenter__(self):
-        self.session = await self.session_maker()
+        self.session = self.session_maker()
         self.user_repo = UserRepository(self.session)
         self.task_repo = TaskRepository(self.session)
         return self
@@ -45,3 +46,7 @@ class UnitOfWork(IUnitOfWork):
 
     async def rollback(self):
         await self.session.rollback()
+
+
+async def get_unit_of_work():
+    return UnitOfWork(async_session_maker)

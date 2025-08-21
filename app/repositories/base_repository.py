@@ -36,6 +36,8 @@ class Repository(AbstractRepository):
     async def add_one(self, data: dict):
         new_obj = self.model(**data)
         self.session.add(new_obj)
+        await self.session.flush()
+        await self.session.refresh(new_obj)
         return new_obj
 
     async def find_all(self):
@@ -53,6 +55,8 @@ class Repository(AbstractRepository):
         obj = await self.find_one(obj_id)
         for key, val in new_data.items():
             setattr(obj, key, val)
+        await self.session.flush()
+        await self.session.refresh(obj)
         return obj
 
     async def remove_one(self, obj_id: int):

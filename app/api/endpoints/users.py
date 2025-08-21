@@ -1,40 +1,35 @@
+from typing import List
+
 from fastapi import APIRouter
 from fastapi.params import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.schemas.user import UserIn
-from app.db.database import get_session
-from app.repositories.user_repository import UserRepository
+from app.api.schemas.user import UserCreate, UserFromDB
+from app.services.user_service import UserService, get_user_service
 
 
 users_router = APIRouter(tags=["users"], prefix="/users")
 
 
-@users_router.get("/")
-async def read_users(session: AsyncSession = Depends(get_session)):
-    user_repo = UserRepository(session)
-    return await user_repo.find_all()
+@users_router.get("/", response_model=List[UserFromDB])
+async def get_users(user_service: UserService = Depends(get_user_service)):
+    return await user_service.get_users()
 
 
-@users_router.get("/{user_id}/")
-async def read_user(user_id: int, session: AsyncSession = Depends(get_session)):
-    user_repo = UserRepository(session)
-    return await user_repo.find_one(user_id)
+@users_router.get("/{user_id}/", response_model=UserFromDB)
+async def get_user(user_id: int, user_service: UserService = Depends(get_user_service)):
+    return await user_service.get_user(user_id)
 
 
-@users_router.post("/")
-async def create_user(user: UserIn, session: AsyncSession = Depends(get_session)):
-    user_repo = UserRepository(session)
-    return await user_repo.add_one(user.model_dump())
+@users_router.post("/", response_model=UserFromDB)
+async def create_user(user: UserCreate, user_service: UserService = Depends(get_user_service)):
+    return await user_service.create_user(user)
 
 
-@users_router.patch("/{user_id}/")
-async def update_user(user_id: int, user: UserIn, session: AsyncSession = Depends(get_session)):
-    user_repo = UserRepository(session)
-    return await user_repo.update_one(user_id, user.model_dump())
+@users_router.patch("/{user_id}/", response_model=UserFromDB)
+async def update_user(user_id: int, user: UserCreate, user_service: UserService = Depends(get_user_service)):
+    return await user_service.update_user(user_id, user)
 
 
-@users_router.delete("/{user_id}/")
-async def delete_user(user_id: int, session: AsyncSession = Depends(get_session)):
-    user_repo = UserRepository(session)
-    return await user_repo.remove_one(user_id)
+@users_router.delete("/{user_id}/", response_model=UserFromDB)
+async def delete_user(user_id: int, user_service: UserService = Depends(get_user_service)):
+    return await user_service.delete_user(user_id)
