@@ -13,9 +13,9 @@ class TaskService:
             tasks = await uow.task_repo.find_all()
             return [TaskFromDB.model_validate(task) for task in tasks]
 
-    async def get_task(self, task_id: int) -> TaskFromDB:
+    async def get_task(self, **filters) -> TaskFromDB:
         async with self.uow as uow:
-            task = await uow.task_repo.find_one(task_id)
+            task = await uow.task_repo.find_one(**filters)
             return TaskFromDB.model_validate(task)
 
     async def create_task(self, task: TaskCreate) -> TaskFromDB:

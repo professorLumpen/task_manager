@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -33,6 +33,13 @@ class Repository(AbstractRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    async def get_obj(self, **filters):
+        conditions = [getattr(self.model, key) == val for key, val in filters.items()]
+        query = select(self.model).where(and_(*conditions))
+        result = await self.session.execute(query)
+        obj = result.scalars().first()
+        return obj
+
     async def add_one(self, data: dict):
         new_obj = self.model(**data)
         self.session.add(new_obj)
@@ -45,14 +52,14 @@ class Repository(AbstractRepository):
         result = await self.session.execute(query)
         return result.scalars().all()
 
-    async def find_one(self, obj_id: int):
-        obj = await self.session.get(self.model, obj_id)
+    async def find_one(self, **filters):
+        obj = await self.get_obj(**filters)
         if obj:
             return obj
         raise HTTPException(status_code=404, detail="Not Found")
 
     async def update_one(self, obj_id: int, new_data: dict):
-        obj = await self.find_one(obj_id)
+        obj = await self.find_one(id=obj_id)
         for key, val in new_data.items():
             setattr(obj, key, val)
         await self.session.flush()
@@ -60,6 +67,6 @@ class Repository(AbstractRepository):
         return obj
 
     async def remove_one(self, obj_id: int):
-        obj = await self.find_one(obj_id)
+        obj = await self.find_one(id=obj_id)
         await self.session.delete(obj)
         return obj

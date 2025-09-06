@@ -14,7 +14,7 @@ async def get_tasks(task_service: TaskService = Depends(get_task_service)):
 
 @tasks_router.get("/{task_id}/", response_model=TaskFromDB)
 async def get_task(task_id: int, task_service: TaskService = Depends(get_task_service)):
-    return await task_service.get_task(task_id)
+    return await task_service.get_task(id=task_id)
 
 
 @tasks_router.post("/", response_model=TaskFromDB)
