@@ -5,8 +5,8 @@ from fastapi.params import Depends
 
 from app.api.schemas.user import UserAuth, UserCreate, UserFromDB
 from app.core.dependencies import get_current_user
-from app.core.rbac import PermissionChecker
 from app.services.user_service import UserService, get_user_service
+from app.utils.rbac import PermissionChecker
 
 
 users_router = APIRouter(tags=["users"], prefix="/users")
@@ -25,6 +25,7 @@ async def get_users(current_user=Depends(get_current_user), user_service: UserSe
 
 
 @users_router.get("/{user_id}/", response_model=UserFromDB)
+@PermissionChecker(["admin"])
 async def get_user(user_id: int, user_service: UserService = Depends(get_user_service)):
     return await user_service.get_user(id=user_id)
 
@@ -35,10 +36,12 @@ async def create_user(user: UserCreate, user_service: UserService = Depends(get_
 
 
 @users_router.patch("/{user_id}/", response_model=UserFromDB)
+@PermissionChecker(["admin"])
 async def update_user(user_id: int, user: UserCreate, user_service: UserService = Depends(get_user_service)):
     return await user_service.update_user(user_id, user)
 
 
 @users_router.delete("/{user_id}/", response_model=UserFromDB)
+@PermissionChecker(["admin"])
 async def delete_user(user_id: int, user_service: UserService = Depends(get_user_service)):
     return await user_service.delete_user(user_id)

@@ -1,8 +1,7 @@
 import datetime
-from http.client import HTTPException
 
 import jwt
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 
@@ -35,13 +34,16 @@ def decode_token(token: str = Depends(oauth2_scheme)) -> dict:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
         return payload
     except jwt.ExpiredSignatureError:
-        raise HTTPException(401, "Token expired")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Token expired")
     except jwt.InvalidTokenError:
-        raise HTTPException(401, "Invalid token")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid token")
 
 
 def get_current_user_id(payload: dict = Depends(decode_token)) -> int:
     user_id = payload.get("sub")
     if user_id is None:
-        raise HTTPException(404, "User not found")
-    return int(user_id)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
+    try:
+        return int(user_id)
+    except ValueError:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid token")

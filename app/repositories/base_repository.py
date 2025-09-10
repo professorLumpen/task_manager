@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -41,6 +41,10 @@ class Repository(AbstractRepository):
         return obj
 
     async def add_one(self, data: dict):
+        obj = await self.get_obj(**data)
+        if obj:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already exists")
+
         new_obj = self.model(**data)
         self.session.add(new_obj)
         await self.session.flush()
@@ -56,7 +60,7 @@ class Repository(AbstractRepository):
         obj = await self.get_obj(**filters)
         if obj:
             return obj
-        raise HTTPException(status_code=404, detail="Not Found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
 
     async def update_one(self, obj_id: int, new_data: dict):
         obj = await self.find_one(id=obj_id)

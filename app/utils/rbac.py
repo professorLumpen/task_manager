@@ -14,7 +14,7 @@ class PermissionChecker:
             if current_user is None:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authorized")
             if not any(role in self.access_roles for role in current_user.roles):
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
             return await func(*args, **kwargs)
 
         return wrapper
