@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from fastapi import HTTPException, status
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 
 class AbstractRepository(ABC):
@@ -33,9 +34,13 @@ class Repository(AbstractRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    @property
+    def second_model(self):
+        return
+
     async def get_obj(self, **filters):
         conditions = [getattr(self.model, key) == val for key, val in filters.items()]
-        query = select(self.model).where(and_(*conditions))
+        query = select(self.model).where(and_(*conditions)).options(selectinload(self.second_model))
         result = await self.session.execute(query)
         obj = result.scalars().first()
         return obj

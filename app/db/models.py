@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -14,8 +15,8 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String)
     password: Mapped[str] = mapped_column(String)
-    roles: Mapped[List[str]] = mapped_column(MutableList.as_mutable(JSON))
-    tasks: Mapped[List["Task"]] = relationship(back_populates="users", secondary="users_tasks")
+    roles: Mapped[list[str]] = mapped_column(MutableList.as_mutable(JSONB))
+    tasks: Mapped[list["Task"]] = relationship(back_populates="users", secondary="users_tasks")
 
 
 class Task(Base):

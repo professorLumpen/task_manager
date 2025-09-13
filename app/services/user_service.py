@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from fastapi.params import Depends
 
+from app.api.schemas.common import UserWithTasks
 from app.api.schemas.user import UserAuth, UserCreate, UserFromDB
 from app.core.security import create_access_token, get_password_hash, verify_password
 from app.utils.unit_of_work import IUnitOfWork, get_unit_of_work
@@ -15,10 +16,10 @@ class UserService:
             users = await uow.user_repo.find_all()
             return [UserFromDB.model_validate(user) for user in users]
 
-    async def get_user(self, **filters) -> UserFromDB:
+    async def get_user(self, **filters) -> UserWithTasks:
         async with self.uow as uow:
             user = await uow.user_repo.find_one(**filters)
-            return UserFromDB.model_validate(user)
+            return UserWithTasks.model_validate(user)
 
     async def create_user(self, user: UserCreate) -> UserFromDB:
         user_data = user.model_dump()

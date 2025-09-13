@@ -20,3 +20,8 @@ class TaskFromDB(TaskBase):
     id: int
     created_at: datetime
     completed_at: Optional[datetime]
+
+
+class TaskAssign(BaseModel):
+    task_id: int
+    user_id: int

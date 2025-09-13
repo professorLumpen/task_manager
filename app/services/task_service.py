@@ -1,5 +1,6 @@
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 
+from app.api.schemas.common import TaskWithUsers
 from app.api.schemas.task import TaskCreate, TaskFromDB
 from app.utils.unit_of_work import IUnitOfWork, get_unit_of_work
 from app.utils.websocket import ConnectionManager, get_ws_manager
@@ -15,10 +16,10 @@ class TaskService:
             tasks = await uow.task_repo.find_all()
             return [TaskFromDB.model_validate(task) for task in tasks]
 
-    async def get_task(self, **filters) -> TaskFromDB:
+    async def get_task(self, **filters) -> TaskWithUsers:
         async with self.uow as uow:
             task = await uow.task_repo.find_one(**filters)
-            return TaskFromDB.model_validate(task)
+            return TaskWithUsers.model_validate(task)
 
     async def create_task(self, task: TaskCreate) -> TaskFromDB:
         task_data = task.model_dump()
@@ -50,6 +51,30 @@ class TaskService:
 
             await self.ws_manager.broadcast({"event": "task_updated", "task": task_to_return.model_dump(mode="json")})
 
+            return task_to_return
+
+    async def assign_task(self, task_id: int, user_id: TaskCreate) -> TaskFromDB:
+        async with self.uow as uow:
+            user = await uow.user_repo.find_one(id=user_id)
+            task = await uow.task_repo.find_one(id=task_id)
+            if user in task.users:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User is already assigned")
+
+            task.users.append(user)
+            task_to_return = TaskFromDB.model_validate(task)
+            await uow.commit()
+            return task_to_return
+
+    async def unassign_task(self, task_id: int, user_id: int) -> TaskFromDB:
+        async with self.uow as uow:
+            user = await uow.user_repo.find_one(id=user_id)
+            task = await uow.task_repo.find_one(id=task_id)
+            if user not in task.users:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User is not assigned")
+
+            task.users.remove(user)
+            task_to_return = TaskFromDB.model_validate(task)
+            await uow.commit()
             return task_to_return
 
 
