@@ -9,6 +9,6 @@ class UserRepository(Repository):
     def second_model(self):
         return User.tasks
 
-    async def find_one(self, **filters):
+    async def get_obj(self, **filters):
         filters.pop("password", None)
-        return await super().find_one(**filters)
+        return await super().get_obj(**filters)

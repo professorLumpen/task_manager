@@ -63,6 +63,9 @@ class TaskService:
             task.users.append(user)
             task_to_return = TaskFromDB.model_validate(task)
             await uow.commit()
+
+            await self.ws_manager.broadcast({"event": "task_assigned", "task": task_to_return.model_dump(mode="json")})
+
             return task_to_return
 
     async def unassign_task(self, task_id: int, user_id: int) -> TaskFromDB:
@@ -75,6 +78,11 @@ class TaskService:
             task.users.remove(user)
             task_to_return = TaskFromDB.model_validate(task)
             await uow.commit()
+
+            await self.ws_manager.broadcast(
+                {"event": "task_unassigned", "task": task_to_return.model_dump(mode="json")}
+            )
+
             return task_to_return
 
 

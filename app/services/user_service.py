@@ -17,6 +17,7 @@ class UserService:
             return [UserFromDB.model_validate(user) for user in users]
 
     async def get_user(self, **filters) -> UserWithTasks:
+        filters.pop("password", None)
         async with self.uow as uow:
             user = await uow.user_repo.find_one(**filters)
             return UserWithTasks.model_validate(user)
@@ -39,6 +40,7 @@ class UserService:
 
     async def update_user(self, user_id: int, user: UserCreate) -> UserFromDB:
         user_data = user.model_dump()
+        user_data["password"] = get_password_hash(user_data["password"])
         async with self.uow as uow:
             updated_user = await uow.user_repo.update_one(user_id, user_data)
             user_to_return = UserFromDB.model_validate(updated_user)
