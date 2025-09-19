@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, Request
 
 from app.api.schemas.common import UserWithTasks
-from app.api.schemas.user import UserAuth, UserCreate, UserFromDB
+from app.api.schemas.user import AuthToken, UserAuth, UserCreate, UserFromDB
 from app.core.dependencies import get_current_user
 from app.services.user_service import UserService, get_user_service
 from app.utils.rbac import PermissionChecker
@@ -12,7 +12,7 @@ from app.utils.rbac import PermissionChecker
 users_router = APIRouter(tags=["users"], prefix="/users")
 
 
-@users_router.post("/login/")
+@users_router.post("/login/", response_model=AuthToken)
 async def login_user(user: UserAuth, user_service: UserService = Depends(get_user_service)):
     token = await user_service.login_user(user)
     return token
@@ -36,7 +36,8 @@ async def get_user(
     current_user: UserWithTasks = Depends(get_current_user),
     user_service: UserService = Depends(get_user_service),
 ):
-    return await user_service.get_user(id=user_id)
+    result = await user_service.get_user(id=user_id)
+    return result
 
 
 @users_router.post("/", response_model=UserFromDB)

@@ -4,6 +4,7 @@ from app.api.schemas.common import TaskWithUsers
 from app.api.schemas.task import TaskCreate, TaskFromDB
 from app.utils.unit_of_work import IUnitOfWork, get_unit_of_work
 from app.utils.websocket import ConnectionManager, get_ws_manager
+from logger import logger, logging_decorator
 
 
 class TaskService:
@@ -11,16 +12,19 @@ class TaskService:
         self.uow = uow
         self.ws_manager = ws_manager
 
+    @logging_decorator()
     async def get_tasks(self) -> list[TaskFromDB]:
         async with self.uow as uow:
             tasks = await uow.task_repo.find_all()
             return [TaskFromDB.model_validate(task) for task in tasks]
 
+    @logging_decorator()
     async def get_task(self, **filters) -> TaskWithUsers:
         async with self.uow as uow:
             task = await uow.task_repo.find_one(**filters)
             return TaskWithUsers.model_validate(task)
 
+    @logging_decorator()
     async def create_task(self, task: TaskCreate) -> TaskFromDB:
         task_data = task.model_dump()
         async with self.uow as uow:
@@ -32,6 +36,7 @@ class TaskService:
 
             return task_to_return
 
+    @logging_decorator()
     async def delete_task(self, task_id: int) -> TaskFromDB:
         async with self.uow as uow:
             deleted_task = await uow.task_repo.remove_one(task_id)
@@ -42,6 +47,7 @@ class TaskService:
 
             return task_to_return
 
+    @logging_decorator()
     async def update_task(self, task_id: int, task: TaskCreate) -> TaskFromDB:
         task_data = task.model_dump()
         async with self.uow as uow:
@@ -53,11 +59,13 @@ class TaskService:
 
             return task_to_return
 
+    @logging_decorator()
     async def assign_task(self, task_id: int, user_id: TaskCreate) -> TaskFromDB:
         async with self.uow as uow:
             user = await uow.user_repo.find_one(id=user_id)
             task = await uow.task_repo.find_one(id=task_id)
             if user in task.users:
+                logger.warning(f"User {user_id} already assigned to task {task_id}")
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User is already assigned")
 
             task.users.append(user)
@@ -68,11 +76,13 @@ class TaskService:
 
             return task_to_return
 
+    @logging_decorator()
     async def unassign_task(self, task_id: int, user_id: int) -> TaskFromDB:
         async with self.uow as uow:
             user = await uow.user_repo.find_one(id=user_id)
             task = await uow.task_repo.find_one(id=task_id)
             if user not in task.users:
+                logger.warning(f"Exception: user {user_id} not assigned to task {task_id}")
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User is not assigned")
 
             task.users.remove(user)

@@ -1,4 +1,5 @@
 from dotenv import find_dotenv
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,6 +16,13 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str
     JWT_ACCESS_EXPIRE_MINUTES: int
     JWT_REFRESH_EXPIRE_MINUTES: int
+    SENSITIVE_FIELDS: str
+
+    @classmethod
+    @field_validator("SENSITIVE_FIELDS")
+    def get_list_sensitive_fields(cls, fields):
+        result = [field.strip() for field in fields.split(",")]
+        return result
 
     @property
     def DATABASE_URL(self):
