@@ -78,7 +78,10 @@ class Repository(AbstractRepository):
     async def update_one(self, obj_id: int, new_data: dict):
         obj = await self.find_one(id=obj_id)
         for key, val in new_data.items():
-            setattr(obj, key, val)
+            if hasattr(obj, key):
+                setattr(obj, key, val)
+            else:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Wrong data")
         await self.session.flush()
         await self.session.refresh(obj)
         return obj

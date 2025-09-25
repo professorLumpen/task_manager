@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     JWT_ACCESS_EXPIRE_MINUTES: int
     JWT_REFRESH_EXPIRE_MINUTES: int
     SENSITIVE_FIELDS: str
+    TEST_DB_NAME: str
 
     @classmethod
     @field_validator("SENSITIVE_FIELDS")
@@ -27,6 +28,10 @@ class Settings(BaseSettings):
     @property
     def DATABASE_URL(self):
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+
+    @property
+    def TEST_DATABASE_URL(self):
+        return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.TEST_DB_NAME}"
 
 
 settings = Settings()
