@@ -42,6 +42,11 @@ def task_data():
 
 
 @pytest.fixture
+def user_data():
+    return {"username": "user1", "password": "password", "roles": ["user"]}
+
+
+@pytest.fixture
 async def test_app(test_session):
     async def get_test_session():
         yield test_session
