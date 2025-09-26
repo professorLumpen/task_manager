@@ -69,9 +69,7 @@ async def test_task_repo_add_one_wrong_data(test_uow, id, title, description, st
 
 
 @pytest.mark.asyncio
-async def test_task_repo_already_exists(test_uow):
-    task_data = {"title": "task1", "description": "descr", "status": "created"}
-
+async def test_task_repo_already_exists(test_uow, task_data):
     async with test_uow as uow:
         await uow.task_repo.add_one(task_data)
         await uow.commit()
@@ -85,8 +83,7 @@ async def test_task_repo_already_exists(test_uow):
 
 
 @pytest.mark.asyncio
-async def test_task_repo_find_all(test_uow):
-    task_data = {"title": "task1", "description": "descr", "status": "created"}
+async def test_task_repo_find_all(test_uow, task_data):
     async with test_uow as uow:
         empty_tasks = await uow.task_repo.find_all()
         await uow.task_repo.add_one(task_data)
@@ -99,9 +96,7 @@ async def test_task_repo_find_all(test_uow):
 
 
 @pytest.mark.asyncio
-async def test_task_repo_find_one(test_uow):
-    task_data = {"title": "task1", "description": "descr", "status": "created"}
-
+async def test_task_repo_find_one(test_uow, task_data):
     async with test_uow as uow:
         await uow.task_repo.add_one(task_data)
         await uow.commit()
@@ -125,8 +120,7 @@ async def test_task_repo_find_one(test_uow):
         [1, "task1", "descr", "created"],
     ),
 )
-async def test_task_repo_find_one_parameters(test_uow, id, title, description, status):
-    task_data = {"title": "task1", "description": "descr", "status": "created"}
+async def test_task_repo_find_one_parameters(test_uow, task_data, id, title, description, status):
     search_data = {
         k: v
         for k, v in (("id", id), ("title", title), ("description", description), ("status", status))
@@ -156,8 +150,7 @@ async def test_task_repo_find_one_parameters(test_uow, id, title, description, s
         [1, "task1", "descr", "updated"],
     ),
 )
-async def test_task_repo_not_found(test_uow, id, title, description, status):
-    task_data = {"title": "task1", "description": "descr", "status": "created"}
+async def test_task_repo_not_found(test_uow, task_data, id, title, description, status):
     search_data = {
         k: v
         for k, v in (("id", id), ("title", title), ("description", description), ("status", status))
@@ -179,8 +172,7 @@ async def test_task_repo_not_found(test_uow, id, title, description, status):
 
 
 @pytest.mark.asyncio
-async def test_task_repo_commit(test_uow):
-    task_data = {"title": "task1", "description": "descr", "status": "created"}
+async def test_task_repo_commit(test_uow, task_data):
     async with test_uow as uow:
         await uow.task_repo.add_one(task_data)
 
@@ -193,9 +185,23 @@ async def test_task_repo_commit(test_uow):
 
 
 @pytest.mark.asyncio
-async def test_task_repo_update_not_found(test_uow):
-    task_data = {"title": "task1", "description": "descr", "status": "created"}
+async def test_task_repo_rollback(test_uow, task_data):
+    async with test_uow as uow:
+        await uow.task_repo.add_one(task_data)
+        task = await uow.task_repo.find_one(id=1)
+        assert task is not None
 
+        await uow.rollback()
+
+        with pytest.raises(HTTPException) as exc_info:
+            await uow.task_repo.find_one(id=1)
+
+        assert exc_info.value.status_code == http_status.HTTP_404_NOT_FOUND
+        assert exc_info.value.detail == "Not Found"
+
+
+@pytest.mark.asyncio
+async def test_task_repo_update_not_found(test_uow, task_data):
     async with test_uow as uow:
         with pytest.raises(HTTPException) as exc_info:
             await uow.task_repo.update_one(1, task_data)
@@ -218,8 +224,7 @@ async def test_task_repo_update_not_found(test_uow):
         [2, None, None, None],
     ),
 )
-async def test_task_repo_update(test_uow, id, title, description, status):
-    task_data = {"title": "task1", "description": "descr", "status": "created"}
+async def test_task_repo_update(test_uow, task_data, id, title, description, status):
     new_task_data = {
         k: v
         for k, v in [
@@ -256,8 +261,7 @@ async def test_task_repo_update(test_uow, id, title, description, status):
         [None, None, None, 2],
     ),
 )
-async def test_task_repo_update_wrong_data(test_uow, title, description, status, wrong_field):
-    task_data = {"title": "task1", "description": "descr", "status": "created"}
+async def test_task_repo_update_wrong_data(test_uow, task_data, title, description, status, wrong_field):
     new_task_data = {
         k: v
         for k, v in [
@@ -283,13 +287,12 @@ async def test_task_repo_update_wrong_data(test_uow, title, description, status,
 
 
 @pytest.mark.asyncio
-async def test_task_repo_remove(test_uow):
-    task_data = {"title": "task1", "description": "descr", "status": "created"}
+async def test_task_repo_remove(test_uow, task_data):
     async with test_uow as uow:
         await uow.task_repo.add_one(task_data)
         await uow.commit()
         added_task = await uow.task_repo.find_one(id=1)
-        assert added_task.title == "task1"
+        assert added_task.id == 1
 
     async with test_uow as uow:
         await uow.task_repo.remove_one(1)

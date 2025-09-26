@@ -77,11 +77,14 @@ class Repository(AbstractRepository):
     @logging_decorator()
     async def update_one(self, obj_id: int, new_data: dict):
         obj = await self.find_one(id=obj_id)
+
         for key, val in new_data.items():
             if hasattr(obj, key):
                 setattr(obj, key, val)
             else:
+                logger.warning(f"Exception: object {obj_id} has no attribute {key}")
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Wrong data")
+
         await self.session.flush()
         await self.session.refresh(obj)
         return obj

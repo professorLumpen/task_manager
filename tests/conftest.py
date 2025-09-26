@@ -37,6 +37,11 @@ async def test_uow(test_engine):
 
 
 @pytest.fixture
+def task_data():
+    return {"title": "task1", "description": "descr", "status": "created"}
+
+
+@pytest.fixture
 async def test_app(test_session):
     async def get_test_session():
         yield test_session
