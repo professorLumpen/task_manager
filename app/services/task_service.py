@@ -60,7 +60,7 @@ class TaskService:
             return task_to_return
 
     @logging_decorator()
-    async def assign_task(self, task_id: int, user_id: TaskCreate) -> TaskFromDB:
+    async def assign_task(self, task_id: int, user_id: int) -> TaskFromDB:
         async with self.uow as uow:
             user = await uow.user_repo.find_one(id=user_id)
             task = await uow.task_repo.find_one(id=task_id)
@@ -69,7 +69,7 @@ class TaskService:
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User is already assigned")
 
             task.users.append(user)
-            task_to_return = TaskFromDB.model_validate(task)
+            task_to_return = TaskWithUsers.model_validate(task)
             await uow.commit()
 
             await self.ws_manager.broadcast({"event": "task_assigned", "task": task_to_return.model_dump(mode="json")})
@@ -86,7 +86,7 @@ class TaskService:
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User is not assigned")
 
             task.users.remove(user)
-            task_to_return = TaskFromDB.model_validate(task)
+            task_to_return = TaskWithUsers.model_validate(task)
             await uow.commit()
 
             await self.ws_manager.broadcast(

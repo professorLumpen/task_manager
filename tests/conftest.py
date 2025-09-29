@@ -1,9 +1,17 @@
+from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from app.api.schemas.common import TaskWithUsers, UserWithTasks
+from app.api.schemas.task import TaskFromDB
+from app.api.schemas.user import UserFromDB
 from app.core.config import settings
 from app.db.database import Base, get_session
+from app.services.task_service import TaskService
+from app.services.user_service import UserService
 from app.utils.unit_of_work import UnitOfWork
 from main import app
 
@@ -42,8 +50,109 @@ def task_data():
 
 
 @pytest.fixture
+def task_from_db(task_data):
+    db_data = task_data.copy()
+    db_data.update({"id": 1, "completed_at": None, "created_at": datetime.now()})
+    task = TaskFromDB(**db_data)
+    return task
+
+
+@pytest.fixture
+def task_with_users(task_data):
+    db_data = task_data.copy()
+    db_data.update({"id": 1, "completed_at": None, "created_at": datetime.now(), "users": []})
+    task = TaskWithUsers(**db_data)
+    return task
+
+
+@pytest.fixture
 def user_data():
     return {"username": "user1", "password": "password", "roles": ["user"]}
+
+
+@pytest.fixture
+def user_from_db(user_data):
+    db_data = user_data.copy()
+    db_data.update({"id": 1})
+    user = UserFromDB(**db_data)
+    return user
+
+
+@pytest.fixture
+def user_with_tasks(user_data):
+    db_data = user_data.copy()
+    db_data.update({"id": 1, "tasks": []})
+    user = UserWithTasks(**db_data)
+    return user
+
+
+@pytest.fixture
+def user_with_password(user_data):
+    db_data = user_data.copy()
+    db_data.update({"id": 1, "tasks": []})
+
+    user = MagicMock()
+    [setattr(user, key, val) for key, val in user_data.items()]
+    return user
+
+
+@pytest.fixture
+def mock_task_repo():
+    repo = AsyncMock()
+    repo.add_one = AsyncMock()
+    repo.find_one = AsyncMock()
+    repo.find_all = AsyncMock()
+    repo.update_one = AsyncMock()
+    repo.remove_one = AsyncMock()
+    return repo
+
+
+@pytest.fixture
+def mock_user_repo():
+    repo = AsyncMock()
+    repo.add_one = AsyncMock()
+    repo.find_one = AsyncMock()
+    repo.find_all = AsyncMock()
+    repo.update_one = AsyncMock()
+    repo.remove_one = AsyncMock()
+    return repo
+
+
+class AsyncContextManagerMock:
+    def __init__(self, uow):
+        self.uow = uow
+
+    async def __aenter__(self):
+        return self.uow
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        return False
+
+
+@pytest.fixture
+def mock_uow(mock_task_repo, mock_user_repo):
+    uow = AsyncMock()
+    uow.task_repo = mock_task_repo
+    uow.user_repo = mock_user_repo
+    uow.commit = AsyncMock()
+    return AsyncContextManagerMock(uow)
+
+
+@pytest.fixture
+def mock_ws_manager():
+    ws_manager = AsyncMock()
+    ws_manager.broadcast = AsyncMock()
+    return ws_manager
+
+
+@pytest.fixture
+def task_service(mock_uow, mock_ws_manager):
+    return TaskService(mock_uow, mock_ws_manager)
+
+
+@pytest.fixture
+def user_service(mock_uow):
+    return UserService(mock_uow)
 
 
 @pytest.fixture

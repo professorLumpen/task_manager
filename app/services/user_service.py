@@ -1,4 +1,4 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from fastapi.params import Depends
 
 from app.api.schemas.common import UserWithTasks
@@ -59,7 +59,7 @@ class UserService:
             found_user = await uow.user_repo.find_one(**user_data)
             if not verify_password(user_data["password"], found_user.password):
                 logger.warning("Exception: wrong password")
-                raise HTTPException(status_code=401, detail="Incorrect password")
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password")
             payload = {"sub": str(found_user.id)}
             token_data = {"access_token": create_access_token(payload)}
             return AuthToken.model_validate(token_data)
