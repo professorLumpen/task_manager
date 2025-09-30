@@ -35,7 +35,7 @@ async def assign_task(
     return await task_service.assign_task(**assign_data.model_dump())
 
 
-@tasks_router.delete("/assign/", response_model=TaskFromDB)
+@tasks_router.post("/unassign/", response_model=TaskFromDB)
 @PermissionChecker(["admin"])
 async def unassign_task(
     assign_data: TaskAssign,

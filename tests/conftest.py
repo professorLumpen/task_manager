@@ -9,9 +9,10 @@ from app.api.schemas.common import TaskWithUsers, UserWithTasks
 from app.api.schemas.task import TaskFromDB
 from app.api.schemas.user import UserFromDB
 from app.core.config import settings
-from app.db.database import Base, get_session
-from app.services.task_service import TaskService
-from app.services.user_service import UserService
+from app.core.dependencies import get_current_user
+from app.db.database import Base
+from app.services.task_service import TaskService, get_task_service
+from app.services.user_service import UserService, get_user_service
 from app.utils.unit_of_work import UnitOfWork
 from main import app
 
@@ -156,16 +157,50 @@ def user_service(mock_uow):
 
 
 @pytest.fixture
-async def test_app(test_session):
-    async def get_test_session():
-        yield test_session
+def mock_task_service():
+    task_service = AsyncMock()
+    task_service.get_tasks = AsyncMock(return_value=[])
+    task_service.get_task = AsyncMock()
+    task_service.create_task = AsyncMock()
+    task_service.delete_task = AsyncMock()
+    task_service.update_task = AsyncMock()
+    task_service.assign_task = AsyncMock()
+    task_service.unassign_task = AsyncMock()
+    return task_service
 
-    app.dependency_overrides[get_session] = get_test_session
+
+@pytest.fixture
+def mock_user_service():
+    user_service = AsyncMock()
+    user_service.get_users = AsyncMock(return_value=[])
+    user_service.get_user = AsyncMock()
+    user_service.create_user = AsyncMock()
+    user_service.delete_user = AsyncMock()
+    user_service.update_user = AsyncMock()
+    user_service.login_user = AsyncMock()
+    return user_service
+
+
+@pytest.fixture
+async def mock_app(mock_user_service, mock_task_service, user_with_password):
+    async def get_test_user_service():
+        yield mock_user_service
+
+    async def get_test_task_service():
+        yield mock_task_service
+
+    async def get_test_admin():
+        user_with_password.roles.append("admin")
+        yield user_with_password
+
+    app.dependency_overrides[get_user_service] = get_test_user_service
+    app.dependency_overrides[get_task_service] = get_test_task_service
+    app.dependency_overrides[get_current_user] = get_test_admin
     yield app
 
 
 @pytest.fixture
-async def async_client(test_app):
-    transport = ASGITransport(app=test_app)
+async def async_mock_client(mock_app):
+    transport = ASGITransport(app=mock_app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
