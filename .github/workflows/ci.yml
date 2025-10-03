@@ -42,7 +42,7 @@ jobs:
       JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
       JWT_ALGORITHM: ${{ secrets.JWT_ALGORITHM }}
       JWT_ACCESS_EXPIRE_SECONDS: ${{ secrets.JWT_ACCESS_EXPIRE_SECONDS }}
-      SENSITIVE_FIELDS: : ${{ secrets.SENSITIVE_FIELDS }}
+      SENSITIVE_FIELDS: ${{ secrets.SENSITIVE_FIELDS }}
 
     steps:
       - name: Checkout code
