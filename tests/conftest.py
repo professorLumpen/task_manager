@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from starlette.testclient import TestClient
 
 from app.api.schemas.common import TaskWithUsers, UserWithTasks
 from app.api.schemas.task import TaskFromDB
@@ -15,6 +14,7 @@ from app.db.database import Base
 from app.services.task_service import TaskService, get_task_service
 from app.services.user_service import UserService, get_user_service
 from app.utils.unit_of_work import UnitOfWork
+from app.utils.websocket import get_ws_manager
 from main import app
 
 
@@ -208,12 +208,31 @@ async def async_mock_client(mock_app):
 
 
 @pytest.fixture
-async def async_client():
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
+async def test_task_service(test_uow):
+    ws_manager = get_ws_manager()
+    return TaskService(test_uow, ws_manager)
 
 
 @pytest.fixture
-async def sync_ws_client():
-    return TestClient(app)
+async def test_user_service(test_uow):
+    return UserService(test_uow)
+
+
+@pytest.fixture
+async def test_app(test_task_service, test_user_service):
+    async def get_test_task_service():
+        return test_task_service
+
+    async def get_test_user_service():
+        return test_user_service
+
+    app.dependency_overrides[get_task_service] = get_test_task_service
+    app.dependency_overrides[get_user_service] = get_test_user_service
+    yield app
+
+
+@pytest.fixture
+async def async_test_client(test_app):
+    transport = ASGITransport(app=test_app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client

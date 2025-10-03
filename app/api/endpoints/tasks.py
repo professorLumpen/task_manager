@@ -11,7 +11,11 @@ tasks_router = APIRouter(tags=["tasks"], prefix="/tasks")
 
 
 @tasks_router.get("/", response_model=list[TaskFromDB])
-async def get_tasks(task_service: TaskService = Depends(get_task_service)):
+@PermissionChecker(["user"])
+async def get_tasks(
+    current_user: UserWithTasks = Depends(get_current_user),
+    task_service: TaskService = Depends(get_task_service),
+):
     return await task_service.get_tasks()
 
 

@@ -14,8 +14,7 @@ class Settings(BaseSettings):
     DEBUG: bool
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str
-    JWT_ACCESS_EXPIRE_MINUTES: int
-    JWT_REFRESH_EXPIRE_MINUTES: int
+    JWT_ACCESS_EXPIRE_SECONDS: int
     SENSITIVE_FIELDS: str
     TEST_DB_NAME: str
 

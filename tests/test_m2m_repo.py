@@ -26,7 +26,7 @@ async def add_user_to_task(uow, task_id=1, user_id=1):
 
 
 @pytest.mark.asyncio
-async def test_repos_user_add_task_wrong_data(test_uow, task_data, user_data):
+async def test_repos_user_add_task(test_uow, task_data, user_data):
     await create_task_and_user(test_uow, task_data, user_data)
     await add_task_to_user(test_uow)
 
