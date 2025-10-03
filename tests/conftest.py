@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from starlette.testclient import TestClient
 
 from app.api.schemas.common import TaskWithUsers, UserWithTasks
 from app.api.schemas.task import TaskFromDB
@@ -204,3 +205,15 @@ async def async_mock_client(mock_app):
     transport = ASGITransport(app=mock_app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
+
+
+@pytest.fixture
+async def async_client():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
+
+
+@pytest.fixture
+async def sync_ws_client():
+    return TestClient(app)
