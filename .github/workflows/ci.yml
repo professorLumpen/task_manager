@@ -61,4 +61,4 @@ jobs:
 
       - name: Run tests with pytest
         run: |
-          pytest --maxfail=1 --disable-warnings --tb=short
+          poetry run pytest --maxfail=1 --disable-warnings --tb=short
