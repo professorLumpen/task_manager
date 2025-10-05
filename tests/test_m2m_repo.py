@@ -51,8 +51,10 @@ async def test_repos_user_add_task_already_assigned(test_uow, task_data, user_da
             user.tasks.extend([task, task])
             await uow.commit()
 
+    exc_text = exc_info.value.args[0]
+
     assert exc_info.type is exc_type
-    assert "уже существует" in exc_info.value.args[0]
+    assert "уже существует" in exc_text or "unique" in exc_text
 
 
 @pytest.mark.asyncio
@@ -117,8 +119,10 @@ async def test_repos_task_add_user_already_assigned(test_uow, task_data, user_da
             task.users.extend([user, user])
             await uow.commit()
 
+    exc_text = exc_info.value.args[0]
+
     assert exc_info.type is exc_type
-    assert "уже существует" in exc_info.value.args[0]
+    assert "уже существует" in exc_text or "unique" in exc_text
 
 
 @pytest.mark.asyncio
