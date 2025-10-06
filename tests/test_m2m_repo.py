@@ -41,6 +41,7 @@ async def test_repos_user_add_task(test_uow, task_data, user_data):
 @pytest.mark.asyncio
 async def test_repos_user_add_task_already_assigned(test_uow, task_data, user_data):
     exc_type = IntegrityError
+    exc_messages = ["уже существует", "unique"]
 
     await create_task_and_user(test_uow, task_data, user_data)
 
@@ -54,7 +55,7 @@ async def test_repos_user_add_task_already_assigned(test_uow, task_data, user_da
     exc_text = exc_info.value.args[0]
 
     assert exc_info.type is exc_type
-    assert "уже существует" in exc_text or "unique" in exc_text
+    assert any(message in exc_text for message in exc_messages)
 
 
 @pytest.mark.asyncio
@@ -109,6 +110,7 @@ async def test_repos_task_add_user(test_uow, task_data, user_data):
 @pytest.mark.asyncio
 async def test_repos_task_add_user_already_assigned(test_uow, task_data, user_data):
     exc_type = IntegrityError
+    exc_messages = ["уже существует", "unique"]
 
     await create_task_and_user(test_uow, task_data, user_data)
 
@@ -122,7 +124,7 @@ async def test_repos_task_add_user_already_assigned(test_uow, task_data, user_da
     exc_text = exc_info.value.args[0]
 
     assert exc_info.type is exc_type
-    assert "уже существует" in exc_text or "unique" in exc_text
+    assert any(message in exc_text for message in exc_messages)
 
 
 @pytest.mark.asyncio
